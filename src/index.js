@@ -4,6 +4,8 @@ import express from "express";
 import { createRunDir } from "./utils/artifacts.js";
 import { probeRun } from "./automation/probe.js";
 import { loginProbe } from "./automation/loginProbe.js";
+import { navToUploadPage } from "./automation/navToUploadPage.js";
+
 
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
@@ -27,6 +29,7 @@ app.post("/api/probe", async (req, res, next) => {
 
 // NEW: M3 login probe — body only has username/password
 app.post("/api/login-probe", async (req, res, next) => {
+    console.log("HIT /api/login-probe");            // <— add
   try {
     const { username, password } = req.body || {};
     if (!username || !password) {
@@ -37,6 +40,21 @@ app.post("/api/login-probe", async (req, res, next) => {
     res.json({ runDir, ...result });
   } catch (err) { next(err); }
 });
+
+// NEW: Login → close cookies → SSO jump → upload page
+app.post("/api/nav/upload", async (req, res, next) => {
+    console.log("HIT /api/nav/upload");             // <— add
+
+    try {
+      const { username, password } = req.body || {};
+      if (!username || !password) {
+        throw Object.assign(new Error("username and password are required"), { status: 400 });
+      }
+      const runDir = createRunDir();
+      const result = await navToUploadPage({ username, password }, runDir);
+      res.json({ runDir, ...result });
+    } catch (err) { next(err); }
+  });
 
 // Central error handler
 app.use((err, req, res, next) => {
