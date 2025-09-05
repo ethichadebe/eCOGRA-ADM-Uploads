@@ -4,6 +4,7 @@ import express from "express";
 import { createRunDir } from "./utils/artifacts.js";
 import { probeRun } from "./automation/probe.js";
 import { loginProbe } from "./automation/loginProbe.js";
+import { uploadSelectProvider } from "./automation/uploadSelectProvider.js";
 import { navToUploadPage } from "./automation/navToUploadPage.js";
 
 
@@ -53,6 +54,36 @@ app.post("/api/nav/upload", async (req, res, next) => {
       const runDir = createRunDir();
       const result = await navToUploadPage({ username, password }, runDir);
       res.json({ runDir, ...result });
+    } catch (err) { next(err); }
+  });
+
+// M4.1 — reach upload page and select the first provider from provider[]
+app.post("/api/upload/select-provider", async (req, res, next) => {
+    try {
+      const { username, password, provider } = req.body || {};
+      if (!username || !password) {
+        throw Object.assign(new Error("username and password are required"), { status: 400 });
+      }
+      if (!Array.isArray(provider) || provider.length === 0) {
+        throw Object.assign(new Error("provider must be a non-empty array"), { status: 400 });
+      }
+  
+      const runDir = createRunDir();
+      const result = await uploadSelectProvider({ username, password, provider }, runDir);
+  
+      res.json({
+        route: "/api/upload/select-provider",
+        runDir,
+        ok: result.ok,
+        url: result.url,
+        title: result.title,
+        shots: result.shots,
+        providerTarget: result.providerTarget,
+        providerSelect: result.providerSelect,
+        reason: result.reason,
+        cookieDismissed: result.cookieDismissed,
+        cookieDismissReason: result.cookieDismissReason
+      });
     } catch (err) { next(err); }
   });
 
